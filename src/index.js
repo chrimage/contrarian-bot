@@ -156,6 +156,9 @@ const HTML_CONTENT = `
         const messageInput = document.getElementById('messageInput');
         const sendButton = document.getElementById('sendButton');
         const loading = document.getElementById('loading');
+        
+        // Store conversation history
+        let conversationHistory = [];
 
         function addMessage(content, isUser = false) {
             const messageDiv = document.createElement('div');
@@ -180,6 +183,7 @@ const HTML_CONTENT = `
             if (!message) return;
 
             addMessage(message, true);
+            conversationHistory.push({ role: 'user', content: message });
             messageInput.value = '';
             showLoading();
 
@@ -189,11 +193,15 @@ const HTML_CONTENT = `
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ message }),
+                    body: JSON.stringify({ 
+                        message,
+                        history: conversationHistory.slice(-10) // Send last 10 messages
+                    }),
                 });
 
                 const data = await response.json();
                 addMessage(data.response);
+                conversationHistory.push({ role: 'assistant', content: data.response });
             } catch (error) {
                 addMessage('Sorry, I encountered an error. But I disagree with errors anyway!');
             } finally {
@@ -247,7 +255,7 @@ export default {
         // Handle chat API endpoint
         if (url.pathname === '/api/chat' && request.method === 'POST') {
             try {
-                const { message } = await request.json();
+                const { message, history = [] } = await request.json();
                 
                 if (!message || typeof message !== 'string') {
                     return new Response(JSON.stringify({ error: 'Invalid message' }), {
@@ -256,12 +264,15 @@ export default {
                     });
                 }
 
+                // Build conversation context with history
+                const messages = [
+                    { role: 'system', content: CONTRARIAN_SYSTEM_PROMPT },
+                    ...history.slice(-8), // Include last 8 messages for context
+                ];
+
                 // Call Cloudflare AI
                 const response = await env.AI.run('@cf/meta/llama-3.2-1b-instruct', {
-                    messages: [
-                        { role: 'system', content: CONTRARIAN_SYSTEM_PROMPT },
-                        { role: 'user', content: message }
-                    ],
+                    messages,
                     temperature: 0.7,
                     max_tokens: 150
                 });
