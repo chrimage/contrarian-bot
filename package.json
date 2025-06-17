@@ -7,11 +7,16 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   },
-  "keywords": ["cloudflare", "workers", "ai", "chatbot"],
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "ai",
+    "chatbot"
+  ],
   "author": "Chris",
   "license": "MIT",
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20231121.0",
-    "wrangler": "^3.0.0"
+    "wrangler": "^4.20.1"
   }
 }
